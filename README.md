@@ -5,13 +5,6 @@
 <h1 align="center">Query Key Factory</h1>
 
 <p align="center">
-  <a href="https://github.com/barehera/query-key-factory" target="\_parent"><img src="https://badgen.net/npm/v/@barehera/query-key-factory" alt="Latest published version"></a>
-  <a href="https://bundlephobia.com/package/@barehera/query-key-factory@latest" target="\_parent"><img src="https://badgen.net/bundlephobia/minzip/@barehera/query-key-factory" alt="Bundlephobia"></a>
-  <a href="https://github.com/barehera/query-key-factory" target="\_parent"><img src="https://badgen.net/npm/types/@barehera/query-key-factory" alt="Types included"></a>
-  <a href="https://www.npmjs.com/package/@barehera/query-key-factory" target="\_parent"><img src="https://badgen.net/npm/license/@barehera/query-key-factory" alt="License"></a>
-</p>
-
-<p align="center">
   <strong>Typesafe query key management for <a href="https://tanstack.com/query" target="\_parent">@tanstack/query</a> with complete type safety across queryClient.</strong>
 </p>
 
@@ -403,49 +396,6 @@ const data = queryClient.getQueryData(users.detail(userId).queryKey); // type: U
 
 // ✅ Autocomplete prevents mistakes
 queryClient.invalidateQueries({ queryKey: users.detail._def });
-```
-
-## 📚 API Reference
-
-### `createQueryKeys(scope, definitions)`
-
-Creates a query key factory for a specific scope (feature).
-
-**Parameters:**
-- `scope`: `string` - The feature name (e.g., 'users', 'todos')
-- `definitions`: `Record<string, QueryDefinition>` - Query definitions
-
-**Returns:** Query factory with `_def` property for the scope
-
-### `mergeQueryKeys(queryKeys)`
-
-Merges multiple query key factories into a single object.
-
-**Parameters:**
-- `queryKeys`: `Record<string, ReturnType<typeof createQueryKeys>>` - Object with query factories
-
-**Returns:** Merged query keys object
-
-### Query Definition Types
-
-```ts
-// Static query
-{
-  queryKey: readonly unknown[] | null,
-  queryFn: () => Promise<TData>
-}
-
-// Query with context queries
-{
-  queryKey: readonly unknown[] | null,
-  queryFn: () => Promise<TData>,
-  contextQueries: {
-    [key: string]: QueryDefinition
-  }
-}
-
-// Factory function
-(...args: any[]) => QueryDefinition
 ```
 
 ## 🙏 Credits

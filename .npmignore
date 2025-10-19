@@ -1,0 +1,29 @@
+# Source
+src/
+*.test.ts
+
+# Config
+tsconfig.json
+tsup.config.ts
+vitest.config.ts
+.editorconfig
+.prettierrc*
+.eslintrc*
+
+# Tests
+coverage/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+.github/
+
+# Misc
+*.md
+!README.md
+

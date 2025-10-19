@@ -1,0 +1,134 @@
+name: Publish to NPM
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      tag:
+        description: 'NPM dist-tag (leave empty for latest)'
+        required: false
+        default: 'latest'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
+            pnpm version prerelease --preid=beta --no-git-tag-version
+          else
+            pnpm version ${{ github.event.inputs.version }} --no-git-tag-version
+          fi
+
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Publishing version: $VERSION"
+
+      - name: Run type check
+        run: pnpm run type-check
+
+      - name: Run tests
+        run: pnpm run test
+
+      - name: Build package
+        run: pnpm run build
+
+      - name: Publish to NPM (from release)
+        if: github.event_name == 'release'
+        run: pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to NPM (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ -z "${{ github.event.inputs.tag }}" ] || [ "${{ github.event.inputs.tag }}" = "latest" ]; then
+            pnpm publish --no-git-checks --access public
+          else
+            pnpm publish --no-git-checks --access public --tag ${{ github.event.inputs.tag }}
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.package-version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin ${{ github.ref_name }}
+
+      - name: Create Git tag (manual trigger)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
+        run: |
+          git tag v${{ steps.package-version.outputs.VERSION }}
+          git push origin v${{ steps.package-version.outputs.VERSION }}
+
+      - name: Create GitHub Release (manual trigger)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.VERSION }}
+          release_name: v${{ steps.package-version.outputs.VERSION }}
+          draft: false
+          prerelease: false
+

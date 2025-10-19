@@ -1,0 +1,63 @@
+{
+  "name": "@barehera/query-key-factory",
+  "version": "1.0.0",
+  "description": "Type-safe query key factory for TanStack Query with queryOptions wrapper for complete type safety",
+  "author": "barehera",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "type-check": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "keywords": [
+    "react-query",
+    "tanstack-query",
+    "query-keys",
+    "typescript",
+    "type-safe",
+    "cache",
+    "queryOptions"
+  ],
+  "peerDependencies": {
+    "@tanstack/react-query": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "^5.59.0",
+    "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/barehera/query-key-factory"
+  },
+  "bugs": {
+    "url": "https://github.com/barehera/query-key-factory/issues"
+  },
+  "homepage": "https://github.com/barehera/query-key-factory#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
+

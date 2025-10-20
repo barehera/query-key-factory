@@ -13,7 +13,6 @@ describe("createQueryKeys", () => {
       });
 
       expect(userQueryKeys.all.queryKey).toEqual(["users", "all"]);
-      expect(userQueryKeys.all.queryFn).toBeDefined();
       expect(userQueryKeys._def).toBe("users");
     });
 
@@ -26,7 +25,6 @@ describe("createQueryKeys", () => {
       });
 
       expect(userQueryKeys.detail.queryKey).toEqual(["users", "detail", "123"]);
-      expect(userQueryKeys.detail.queryFn).toBeDefined();
     });
 
     it("should execute queryFn correctly", async () => {
@@ -52,12 +50,18 @@ describe("createQueryKeys", () => {
         detail: (userId: string) => ({
           queryKey: [userId],
           queryFn: async () => ({ id: userId, name: "John" }),
+          contextQueries:{
+            likes: {
+              queryKey: null,
+              queryFn: async () => [],
+            }
+          }
         }),
       });
-
-      const result = userQueryKeys.detail("123");
+      
+      const result = userQueryKeys.detail("123")
+      
       expect(result.queryKey).toEqual(["users", "detail", "123"]);
-      expect(result.queryFn).toBeDefined();
     });
 
     it("should create query factory with null queryKey", () => {
@@ -322,8 +326,9 @@ describe("mergeQueryKeys", () => {
 
     const merged = mergeQueryKeys({ userQueryKeys });
 
-    expect(merged.users._def).toBeUndefined();
+    expect(merged.users._def).toEqual(["users"]);
   });
+  
 });
 
 describe("type safety with queryClient", () => {

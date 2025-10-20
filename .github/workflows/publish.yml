@@ -82,6 +82,23 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "Publishing version: $VERSION"
 
+      - name: Commit version bump (manual trigger)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git add package.json
+          if git diff --staged --quiet; then
+            echo "No version changes to commit"
+          else
+            git commit -m "chore: bump version to ${{ steps.package-version.outputs.VERSION }}"
+            git push origin ${{ github.ref_name }}
+          fi
+
+      - name: Create Git tag (manual trigger)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
+        run: |
+          git tag v${{ steps.package-version.outputs.VERSION }}
+          git push origin v${{ steps.package-version.outputs.VERSION }}
+
       - name: Run type check
         run: pnpm run type-check
 
@@ -93,7 +110,7 @@ jobs:
 
       - name: Publish to NPM (from release)
         if: github.event_name == 'release'
-        run: pnpm publish --no-git-checks --access public
+        run: pnpm publish --no-git-checks --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -101,34 +118,20 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: |
           if [ -z "${{ github.event.inputs.tag }}" ] || [ "${{ github.event.inputs.tag }}" = "latest" ]; then
-            pnpm publish --no-git-checks --access public
+            pnpm publish --no-git-checks --access public --provenance
           else
-            pnpm publish --no-git-checks --access public --tag ${{ github.event.inputs.tag }}
+            pnpm publish --no-git-checks --access public --tag ${{ github.event.inputs.tag }} --provenance
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Commit version bump (manual trigger)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          git add package.json
-          git commit -m "chore: bump version to ${{ steps.package-version.outputs.VERSION }}" || echo "No changes to commit"
-          git push origin ${{ github.ref_name }}
-
-      - name: Create Git tag (manual trigger)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
-        run: |
-          git tag v${{ steps.package-version.outputs.VERSION }}
-          git push origin v${{ steps.package-version.outputs.VERSION }}
-
       - name: Create GitHub Release (manual trigger)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package-version.outputs.VERSION }}
-          release_name: v${{ steps.package-version.outputs.VERSION }}
+          name: v${{ steps.package-version.outputs.VERSION }}
           draft: false
           prerelease: false
+          generate_release_notes: true
 

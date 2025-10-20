@@ -66,6 +66,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Extract and set version from release tag
+        if: github.event_name == 'release'
+        id: release-version
+        run: |
+          TAG_NAME="${{ github.event.release.tag_name }}"
+          # Remove 'v' prefix if present
+          VERSION=${TAG_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version from tag: $VERSION"
+
+      - name: Update package.json version (release)
+        if: github.event_name == 'release'
+        run: |
+          node -e "const pkg = require('./package.json'); pkg.version = '${{ steps.release-version.outputs.VERSION }}'; require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');"
+          echo "Updated package.json to version ${{ steps.release-version.outputs.VERSION }}"
+
       - name: Bump version (manual trigger)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -92,6 +108,13 @@ jobs:
             git commit -m "chore: bump version to ${{ steps.package-version.outputs.VERSION }}"
             git push origin ${{ github.ref_name }}
           fi
+
+      - name: Commit version bump (release)
+        if: github.event_name == 'release'
+        run: |
+          git add package.json
+          git commit -m "chore: bump version to ${{ steps.release-version.outputs.VERSION }}"
+          git push origin ${{ github.ref_name }}
 
       - name: Create Git tag (manual trigger)
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag == 'latest'
